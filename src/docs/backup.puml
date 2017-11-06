@@ -1,0 +1,23 @@
+@startuml
+
+title Backup Logic \n
+
+start
+:init digest list from local file or vault invertory;
+:read files from backup folder;
+while (more files?) is (yes)
+    :calculate digest;
+    if (digest already in the list?) then (yes)
+        ' :next file (nothing to do);
+    else (no)
+        :upload;
+        note left
+            use file path as archive description.
+            convert unicode to base64.
+        end note
+        :add digest to list;
+    endif
+endwhile (no)
+end
+
+@enduml
