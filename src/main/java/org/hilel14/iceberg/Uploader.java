@@ -1,4 +1,4 @@
-package org.hilel14.glacier.backup;
+package org.hilel14.iceberg;
 
 import com.amazonaws.services.glacier.AmazonGlacier;
 import com.amazonaws.services.glacier.AmazonGlacierClientBuilder;
@@ -12,6 +12,7 @@ import java.nio.file.Paths;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.StandardOpenOption;
 import java.nio.file.attribute.BasicFileAttributes;
+import java.security.MessageDigest;
 import java.util.List;
 import java.util.Properties;
 import java.util.logging.Level;
@@ -144,7 +145,7 @@ public class Uploader {
             if (includePattern.matcher(path.getFileName().toString().toLowerCase()).matches()) {
                 matchCount++;
                 try {
-                    String digest = TreeHashUtil.computeSHA256TreeHash(path.toFile());
+                    String digest = new String(MessageDigest.getInstance("MD5").digest(Files.readAllBytes(path)));
                     if (!digestList.contains(digest)) {
                         String description = Base64.encodeBase64String(path.toString().getBytes());
                         String archiveId = dryRun
