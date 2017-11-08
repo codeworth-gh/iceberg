@@ -8,4 +8,4 @@ A free backup and restore utility, with command-line interface and AWS [Glacier]
 0. Install Java
 0. Build this application
 
-For more details, got to Iceberg [wiki](https://github.com/hilel14/iceberg/wiki).
+For more details, go to Iceberg [wiki](https://github.com/hilel14/iceberg/wiki).
