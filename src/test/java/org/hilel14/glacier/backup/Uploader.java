@@ -1,4 +1,4 @@
-package org.hilel14.iceberg;
+package org.hilel14.glacier.backup;
 
 import com.amazonaws.services.glacier.AmazonGlacier;
 import com.amazonaws.services.glacier.AmazonGlacierClientBuilder;
@@ -8,7 +8,6 @@ import java.io.IOException;
 import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.StandardOpenOption;
 import java.nio.file.attribute.BasicFileAttributes;
@@ -18,12 +17,6 @@ import java.util.Properties;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
-import org.apache.commons.cli.CommandLine;
-import org.apache.commons.cli.DefaultParser;
-import org.apache.commons.cli.HelpFormatter;
-import org.apache.commons.cli.Option;
-import org.apache.commons.cli.Options;
-import org.apache.commons.cli.ParseException;
 import org.apache.commons.codec.binary.Base64;
 
 /**
@@ -36,7 +29,7 @@ public class Uploader {
 
     // command line arguments
     Path digestsFile;
-    Path assetsFolder;
+    Path sourceFolder;
     String vaultName;
     boolean dryRun;
     // configuration properties
@@ -47,50 +40,9 @@ public class Uploader {
     int matchCount = 0;
     int uploadCount = 0;
 
-    public static void main(String[] args) {
-
-        Options options = addOptions();
-        try {
-            // Parse the command line arguments
-            CommandLine commandLine = new DefaultParser().parse(options, args);
-            Path assetsFolder = Paths.get(commandLine.getOptionValue("a"));
-            Path digestsFile = Paths.get(commandLine.getOptionValue("d"));
-            Boolean dryRun = commandLine.hasOption("t");
-            // run
-            Uploader uploader = new Uploader(assetsFolder, digestsFile, dryRun);
-            uploader.mainTask();
-        } catch (ParseException ex) {
-            System.out.println(ex.getMessage());
-            new HelpFormatter().printHelp(Uploader.class.getName(), options);
-            System.exit(1);
-        } catch (Exception ex) {
-            LOGGER.log(Level.SEVERE, null, ex);
-            System.exit(2);
-        }
-    }
-
-    static Options addOptions() {
-        Options options = new Options();
-        Option option;
-        // assets folder
-        option = new Option("a", "assets-folder", true, "Folder with files to backup");
-        option.setRequired(true);
-        options.addOption(option);
-        // digest-list
-        option = new Option("d", "digests-file", true, "File with digests of already backed-up files");
-        option.setRequired(true);
-        options.addOption(option);
-        // dry run
-        option = new Option("t", "test", false, "Test (dry run) flag");
-        option.setRequired(false);
-        options.addOption(option);
-        // return
-        return options;
-    }
-
     public Uploader(Path assetsFolder, Path digestFile, Boolean dryRun)
             throws Exception {
-        this.assetsFolder = assetsFolder;
+        this.sourceFolder = assetsFolder;
         this.digestsFile = digestFile;
         this.dryRun = dryRun;
         digestList = Files.readAllLines(digestsFile);
@@ -104,10 +56,10 @@ public class Uploader {
     }
 
     public void mainTask() throws IOException {
-        LOGGER.log(Level.INFO, "Processing files in folder {0}", assetsFolder);
+        LOGGER.log(Level.INFO, "Processing files in folder {0}", sourceFolder);
         LOGGER.log(Level.INFO, "Uploading to vault {0}", vaultName);
         LOGGER.log(Level.INFO, "Dry-run flag set to {0}", dryRun);
-        Files.walkFileTree(assetsFolder, new Uploader.UploadVisitor());
+        Files.walkFileTree(sourceFolder, new Uploader.UploadVisitor());
         LOGGER.log(Level.INFO, "{0} matching files found, {1} uploaded", new Object[]{matchCount, uploadCount});
     }
 

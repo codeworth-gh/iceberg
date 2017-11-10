@@ -7,7 +7,7 @@ import org.junit.Assert;
  *
  * @author hilel14
  */
-public class UploaderTest {
+public class MiscTest {
 
     @org.junit.Test
     public void testRegEx() {

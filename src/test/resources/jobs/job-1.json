@@ -1,0 +1,13 @@
+{
+    "description": "Backup job one",
+    "snapshot": "/var/opt/iceberg/job-1.snap",
+    "source": {
+        "path": "/var/opt/data/files", 
+        "exclude": ".ignore",
+        "include": "pdf|jpg|tif"
+    },
+    "target": {
+        "region": "eu-west-1",
+        "vault": "my-documents"
+    }
+}
