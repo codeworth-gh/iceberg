@@ -6,7 +6,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Map;
+import java.util.logging.Logger;
 import java.util.regex.Pattern;
 
 /**
@@ -15,29 +15,31 @@ import java.util.regex.Pattern;
  */
 public class Job {
 
-    private String description;
-    private Map<String, Path> snapshot;
-    private Path source;
-    private Pattern exclude;
-    private Pattern include;
-    private String region;
-    private String vault;
-
-    public Job() {
-
-    }
+    static final Logger LOGGER = Logger.getLogger(Job.class.getName());
+    private final String description;
+    private final Path snapshot;
+    private final Path source;
+    private final Pattern exclude;
+    private final Pattern include;
+    private final String region;
+    private final String vault;
 
     public Job(String file) throws IOException {
         InputStream in = Job.class.getResourceAsStream("/jobs/" + file);
         ObjectMapper objectMapper = new ObjectMapper();
         JsonNode rootNode = objectMapper.readTree(in);
-        JsonNode node;
-        // description
-        node = rootNode.path("description");
-        description = node.asText();
-        // source folder
-        node = rootNode.path("source").path("path");
-        source = Paths.get(node.asText());
+        // general
+        description = rootNode.path("description").asText();
+        snapshot = Paths.get(rootNode.path("snapshot").asText());
+        // source
+        JsonNode sourceNode = rootNode.path("source");
+        source = Paths.get(sourceNode.path("path").asText());
+        exclude = Pattern.compile(sourceNode.path("exclude").asText());
+        include = Pattern.compile(sourceNode.path("include").asText());
+        // target
+        JsonNode targetNode = rootNode.path("target");
+        region = targetNode.path("region").asText();
+        vault = targetNode.path("vault").asText();
     }
 
     /**
@@ -48,24 +50,10 @@ public class Job {
     }
 
     /**
-     * @param description the description to set
-     */
-    public void setDescription(String description) {
-        this.description = description;
-    }
-
-    /**
      * @return the snapshot
      */
-    public Map<String, Path> getSnapshot() {
+    public Path getSnapshot() {
         return snapshot;
-    }
-
-    /**
-     * @param snapshot the snapshot to set
-     */
-    public void setSnapshot(Map<String, Path> snapshot) {
-        this.snapshot = snapshot;
     }
 
     /**
@@ -76,24 +64,10 @@ public class Job {
     }
 
     /**
-     * @param source the source to set
-     */
-    public void setSource(Path source) {
-        this.source = source;
-    }
-
-    /**
      * @return the exclude
      */
     public Pattern getExclude() {
         return exclude;
-    }
-
-    /**
-     * @param exclude the exclude to set
-     */
-    public void setExclude(Pattern exclude) {
-        this.exclude = exclude;
     }
 
     /**
@@ -104,24 +78,10 @@ public class Job {
     }
 
     /**
-     * @param include the include to set
-     */
-    public void setInclude(Pattern include) {
-        this.include = include;
-    }
-
-    /**
      * @return the region
      */
     public String getRegion() {
         return region;
-    }
-
-    /**
-     * @param region the region to set
-     */
-    public void setRegion(String region) {
-        this.region = region;
     }
 
     /**
@@ -131,10 +91,4 @@ public class Job {
         return vault;
     }
 
-    /**
-     * @param vault the vault to set
-     */
-    public void setVault(String vault) {
-        this.vault = vault;
-    }
 }

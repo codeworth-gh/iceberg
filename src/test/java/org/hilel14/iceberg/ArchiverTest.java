@@ -5,15 +5,14 @@ import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import static org.junit.Assert.*;
 
 /**
  *
  * @author hilel14
  */
-public class ArchiveCreatorTest {
+public class ArchiverTest {
 
-    public ArchiveCreatorTest() {
+    public ArchiverTest() {
     }
 
     @BeforeClass
@@ -32,14 +31,10 @@ public class ArchiveCreatorTest {
     public void tearDown() {
     }
 
-    /**
-     * Test of createArchive method, of class ArchiveCreator.
-     */
-    @Test
+    //@Test
     public void testCreateArchive() throws Exception {
-        System.out.println("createArchive");
         String job = "job-1.json";
-        ArchiveCreator instance = new ArchiveCreator(job);
+        Archiver instance = new Archiver(job);
         instance.createArchive();
     }
 

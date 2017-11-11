@@ -1,5 +1,6 @@
-package org.hilel14.iceberg;
+package org.hilel14.iceberg.cli;
 
+import java.nio.file.Path;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.apache.commons.cli.CommandLine;
@@ -8,6 +9,8 @@ import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
+import org.hilel14.iceberg.Archiver;
+import org.hilel14.iceberg.Uploader;
 
 /**
  *
@@ -25,8 +28,9 @@ public class Backup {
             CommandLine commandLine = new DefaultParser().parse(options, args);
             String job = commandLine.getOptionValue("j");
             // run
-            ArchiveCreator creator = new ArchiveCreator(job);
-            creator.createArchive();
+            Archiver archiver = new Archiver(job);
+            Path archive = archiver.createArchive();
+            Uploader uploader = new Uploader();
         } catch (ParseException ex) {
             System.out.println(ex.getMessage());
             new HelpFormatter().printHelp(Backup.class.getName(), options);
