@@ -7,13 +7,8 @@
         "include": "pdf|jpg|tif"
     },
     "target": {
-        "local": {
-            "enabled": true,
-            "path": "/var/opt/iceberg/vault-1"
-        },
-        "glacier": {
-            "region": "eu-west-1",
-            "vault": "vault-1"
-        }
+        "enabled": true,
+        "region": "eu-west-1",
+        "vault": "vault-1"
     }
 }

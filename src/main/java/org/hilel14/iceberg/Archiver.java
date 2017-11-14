@@ -8,7 +8,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
-import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.HashSet;
 import java.util.Set;
@@ -25,29 +24,24 @@ import org.apache.commons.compress.archivers.zip.ZipArchiveOutputStream;
 public class Archiver {
 
     private final Job job;
-    ZipArchiveOutputStream zip;
-    MessageDigest digest;
+    private ZipArchiveOutputStream zip;
+    private long fileCount = 0;
 
     static final Logger LOGGER = Logger.getLogger(Archiver.class.getName());
 
-    public Archiver(String jobFile)
+    public Archiver(Job job)
             throws IOException, NoSuchAlgorithmException {
-        job = new Job(jobFile);
-        digest = MessageDigest.getInstance("MD5");
-        Snapshot snapshot = new Snapshot();
-        snapshot.load(job.getSnapshotPath());
-        snapshot.getHashToPaths().clear();
-        job.setSnapshot(snapshot);
+        this.job = job;
     }
 
     public Path createArchive() throws IOException {
         Path target = Files.createTempFile("icegerg.", ".zip");
-        LOGGER.log(Level.INFO,
-                "Adding files in {0} to {1}",
-                new Object[]{job.getSource(), target});
+        LOGGER.log(Level.INFO, "Adding files to {0}", target);
         zip = new ZipArchiveOutputStream(target.toFile());
         Files.walkFileTree(job.getSource(), new Zipper());
         zip.close();
+        LOGGER.log(Level.INFO, "{0} files added, archive size is {1} bytes",
+                new Object[]{fileCount,Files.size(target)});
         job.getSnapshot().save(job.getSnapshotPath());
         return target;
     }
@@ -69,6 +63,7 @@ public class Archiver {
                 zip.putArchiveEntry(entry);
                 zip.write(Files.readAllBytes(path));
                 zip.closeArchiveEntry();
+                fileCount++;
             }
 
             // update snapshot and continue            
@@ -82,6 +77,13 @@ public class Archiver {
 
             return FileVisitResult.CONTINUE;
         }
+    }
+
+    /**
+     * @return the fileCount
+     */
+    public long getFileCount() {
+        return fileCount;
     }
 
 }

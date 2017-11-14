@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
 
@@ -22,8 +23,7 @@ public class Job {
     private final Path source;
     private final Pattern exclude;
     private final Pattern include;
-    private final Path localTarget;
-    private final boolean localTargetEnabled;
+    private final boolean uploadEnabled;
     private final String region;
     private final String vault;
 
@@ -40,14 +40,13 @@ public class Job {
         source = Paths.get(node.path("path").asText());
         exclude = Pattern.compile(node.path("exclude").asText());
         include = Pattern.compile(node.path("include").asText());
-        // local target
-        node = rootNode.path("target").path("local");
-        localTarget = Paths.get(node.path("path").asText());
-        localTargetEnabled = Boolean.parseBoolean(node.path("enabled").asText());
-        // glacier target
-        node = rootNode.path("target").path("glacier");
+        // target (glacier)
+        node = rootNode.path("target");
+        uploadEnabled = Boolean.parseBoolean(node.path("enabled").asText());
         region = node.path("region").asText();
         vault = node.path("vault").asText();
+        // done
+        LOGGER.log(Level.INFO, "done loding properties for {0}", description);
     }
 
     /**
@@ -93,20 +92,6 @@ public class Job {
     }
 
     /**
-     * @return the localTarget
-     */
-    public Path getLocalTarget() {
-        return localTarget;
-    }
-
-    /**
-     * @return the localTargetEnabled
-     */
-    public boolean isLocalTargetEnabled() {
-        return localTargetEnabled;
-    }
-
-    /**
      * @return the snapshotPath
      */
     public Path getSnapshotPath() {
@@ -125,6 +110,13 @@ public class Job {
      */
     public void setSnapshot(Snapshot snapshot) {
         this.snapshot = snapshot;
+    }
+
+    /**
+     * @return the uploadEnabled flag
+     */
+    public boolean isUploadEnabled() {
+        return uploadEnabled;
     }
 
 }
