@@ -61,7 +61,8 @@ public class Backup {
         snapshot.load(job.getSnapshotPath());
         snapshot.getHashToPaths().clear();
         job.setSnapshot(snapshot);
-        LOGGER.log(Level.INFO, "collecting files from {0}", job.getSource());
+        LOGGER.log(Level.INFO, "collecting files from {0} excluding pattern {1}",
+                new Object[]{job.getSource(), job.getExclude()});
         Archiver archiver = new Archiver(job);
         Path archive = archiver.createArchive();
         if (job.isUploadEnabled()) {

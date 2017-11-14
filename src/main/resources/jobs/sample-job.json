@@ -3,8 +3,7 @@
     "snapshot": "/var/opt/iceberg/sample-job.snapshot.json",
     "source": {
         "path": "/var/opt/data/files", 
-        "exclude": ".ignore",
-        "include": "pdf|jpg|tif"
+        "exclude": "X{999}"
     },
     "target": {
         "enabled": true,

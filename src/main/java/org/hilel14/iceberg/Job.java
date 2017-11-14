@@ -22,7 +22,6 @@ public class Job {
     private Snapshot snapshot;
     private final Path source;
     private final Pattern exclude;
-    private final Pattern include;
     private final boolean uploadEnabled;
     private final String region;
     private final String vault;
@@ -39,7 +38,6 @@ public class Job {
         node = rootNode.path("source");
         source = Paths.get(node.path("path").asText());
         exclude = Pattern.compile(node.path("exclude").asText());
-        include = Pattern.compile(node.path("include").asText());
         // target (glacier)
         node = rootNode.path("target");
         uploadEnabled = Boolean.parseBoolean(node.path("enabled").asText());
@@ -68,13 +66,6 @@ public class Job {
      */
     public Pattern getExclude() {
         return exclude;
-    }
-
-    /**
-     * @return the include
-     */
-    public Pattern getInclude() {
-        return include;
     }
 
     /**

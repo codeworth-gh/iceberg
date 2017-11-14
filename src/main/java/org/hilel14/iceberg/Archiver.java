@@ -41,7 +41,7 @@ public class Archiver {
         Files.walkFileTree(job.getSource(), new Zipper());
         zip.close();
         LOGGER.log(Level.INFO, "{0} files added, archive size is {1} bytes",
-                new Object[]{fileCount,Files.size(target)});
+                new Object[]{fileCount, Files.size(target)});
         job.getSnapshot().save(job.getSnapshotPath());
         return target;
     }
@@ -51,6 +51,10 @@ public class Archiver {
         @Override
         public FileVisitResult visitFile(Path path, BasicFileAttributes attrs)
                 throws IOException {
+            // exclude
+            if (job.getExclude().matcher(path.getFileName().toString()).matches()) {
+                return FileVisitResult.CONTINUE;
+            }
             // calculate file hash
             String hash;
             try (InputStream in = new FileInputStream(path.toFile())) {
@@ -65,7 +69,6 @@ public class Archiver {
                 zip.closeArchiveEntry();
                 fileCount++;
             }
-
             // update snapshot and continue            
             if (job.getSnapshot().getHashToPaths().containsKey(hash)) {
                 job.getSnapshot().getHashToPaths().get(hash).add(path);
