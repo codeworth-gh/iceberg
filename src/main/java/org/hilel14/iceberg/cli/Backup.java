@@ -10,7 +10,6 @@ import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 import org.hilel14.iceberg.Archiver;
-import org.hilel14.iceberg.Uploader;
 
 /**
  *
@@ -30,10 +29,10 @@ public class Backup {
             // run
             Archiver archiver = new Archiver(job);
             Path archive = archiver.createArchive();
-            Uploader uploader = new Uploader();
+            //Uploader uploader = new Uploader();
         } catch (ParseException ex) {
             System.out.println(ex.getMessage());
-            new HelpFormatter().printHelp(Backup.class.getName(), options);
+            new HelpFormatter().printHelp("java [options] " + Backup.class.getName() + " [args]", options);
             System.exit(1);
         } catch (Exception ex) {
             LOGGER.log(Level.SEVERE, null, ex);

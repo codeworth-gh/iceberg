@@ -10,6 +10,7 @@ import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.HashSet;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -26,7 +27,6 @@ public class Archiver {
     private final Job job;
     ZipArchiveOutputStream zip;
     MessageDigest digest;
-    Set<String> history;
 
     static final Logger LOGGER = Logger.getLogger(Archiver.class.getName());
 
@@ -34,6 +34,10 @@ public class Archiver {
             throws IOException, NoSuchAlgorithmException {
         job = new Job(jobFile);
         digest = MessageDigest.getInstance("MD5");
+        Snapshot snapshot = new Snapshot();
+        snapshot.load(job.getSnapshotPath());
+        snapshot.getHashToPaths().clear();
+        job.setSnapshot(snapshot);
     }
 
     public Path createArchive() throws IOException {
@@ -44,7 +48,7 @@ public class Archiver {
         zip = new ZipArchiveOutputStream(target.toFile());
         Files.walkFileTree(job.getSource(), new Zipper());
         zip.close();
-        //job.saveSnapshot();
+        job.getSnapshot().save(job.getSnapshotPath());
         return target;
     }
 
@@ -59,17 +63,23 @@ public class Archiver {
                 hash = DigestUtils.md5Hex(in);
             }
             // add new files to archive
-            /*
-            if (!job.getSnapshot().keySet().contains(hash)) {
+            if (!job.getSnapshot().getFileHashes().contains(hash)) {
                 ZipArchiveEntry entry = new ZipArchiveEntry(path.toString());
                 entry.setSize(Files.size(path));
                 zip.putArchiveEntry(entry);
                 zip.write(Files.readAllBytes(path));
                 zip.closeArchiveEntry();
             }
-            // update snapshot and continue
-            job.getSnapshot().put(hash, path);
-             */
+
+            // update snapshot and continue            
+            if (job.getSnapshot().getHashToPaths().containsKey(hash)) {
+                job.getSnapshot().getHashToPaths().get(hash).add(path);
+            } else {
+                Set<Path> paths = new HashSet<>();
+                paths.add(path);
+                job.getSnapshot().getHashToPaths().put(hash, paths);
+            }
+
             return FileVisitResult.CONTINUE;
         }
     }

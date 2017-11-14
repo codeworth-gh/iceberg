@@ -1,0 +1,19 @@
+{
+    "description": "Sample backup job",
+    "snapshot": "/var/opt/iceberg/sample-job.snapshot.json",
+    "source": {
+        "path": "/var/opt/data/files", 
+        "exclude": ".ignore",
+        "include": "pdf|jpg|tif"
+    },
+    "target": {
+        "local": {
+            "enabled": true,
+            "path": "/var/opt/iceberg/vault-1"
+        },
+        "glacier": {
+            "region": "eu-west-1",
+            "vault": "vault-1"
+        }
+    }
+}
