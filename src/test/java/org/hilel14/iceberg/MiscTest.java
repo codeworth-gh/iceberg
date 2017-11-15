@@ -1,11 +1,5 @@
 package org.hilel14.iceberg;
 
-import com.fasterxml.jackson.core.JsonFactory;
-import com.fasterxml.jackson.core.JsonGenerator;
-import com.fasterxml.jackson.core.util.DefaultPrettyPrinter;
-import java.io.FileOutputStream;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.regex.Pattern;
 import org.junit.Assert;
 
@@ -15,34 +9,25 @@ import org.junit.Assert;
  */
 public class MiscTest {
 
-    //@org.junit.Test
+    @org.junit.Test
     public void testRegEx() {
-        String regex = ".+\\.(csv|doc|docx|jpeg)";
+        // suffix
+        String regex = ".+\\.(csv|doc)";
         Pattern pattern = Pattern.compile(regex);
-        Assert.assertTrue(pattern.matcher("123.csv").matches());
-        Assert.assertTrue(pattern.matcher("123.doc").matches());
-        Assert.assertFalse(pattern.matcher("123.gif").matches());
-        Assert.assertFalse(pattern.matcher("123.docxZ").matches());
-        Assert.assertFalse(pattern.matcher(".gif").matches());
+        Assert.assertTrue(pattern.matcher("a.csv").matches());
+        Assert.assertTrue(pattern.matcher("b.doc").matches());
+        Assert.assertFalse(pattern.matcher("c.gif").matches());
+        // prefix
+        regex = "\\..+";
+        pattern = Pattern.compile(regex);
+        Assert.assertTrue(pattern.matcher(".a.txt").matches());
+        Assert.assertFalse(pattern.matcher("b.txt").matches());
+        // both
+        regex = "\\..+|.+\\.(csv|doc)";
+        pattern = Pattern.compile(regex);
+        Assert.assertTrue(pattern.matcher("a.csv").matches());
+        Assert.assertTrue(pattern.matcher("b.doc").matches());
+        Assert.assertTrue(pattern.matcher(".c.xml").matches());
+        Assert.assertFalse(pattern.matcher("c.xml").matches());
     }
-
-    //@org.junit.Test
-    public void jsonTest() throws Exception {
-        Path target = Paths.get("/tmp/test.json");
-        try (
-                FileOutputStream out = new FileOutputStream(target.toFile());
-                JsonGenerator jsonGenerator = new JsonFactory().createGenerator(out)) {
-            jsonGenerator.setPrettyPrinter(new DefaultPrettyPrinter());
-            jsonGenerator.writeStartObject();
-            jsonGenerator.writeStringField("description", "Iceberg snapshot");
-            jsonGenerator.writeArrayFieldStart("phoneNumbers");
-            jsonGenerator.writeNumber(1);
-            jsonGenerator.writeNumber(2);
-            jsonGenerator.writeNumber(3);
-            jsonGenerator.writeEndArray();
-            jsonGenerator.writeEndObject(); //closing root object
-            jsonGenerator.flush();
-        }
-    }
-
 }
