@@ -2,10 +2,12 @@ package org.hilel14.iceberg;
 
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.Date;
@@ -24,6 +26,7 @@ import org.junit.Before;
  */
 public class ArchiverTest {
 
+    String[] sampleFiles = new String[]{"doc1.txt", "doc2.txt", "doc3.html", "doc4.xml", ".doc5.txt"};
     Path workFolder;
     Path inFolder;
     Path snapshotFile;
@@ -37,8 +40,8 @@ public class ArchiverTest {
         // create input folder
         inFolder = workFolder.resolve("in");
         Files.createDirectory(inFolder);
-        // extract sample files to input folder
-        extractSampleFiles();
+        // copy sample files to input folder
+        deploySampleFiles();
     }
 
     /**
@@ -47,8 +50,8 @@ public class ArchiverTest {
      * @throws java.lang.Exception
      */
     @org.junit.Test
-    public void excludeNothing() throws Exception {
-        System.out.println("excludeNothing");
+    public void fullBackup() throws Exception {
+        System.out.println("simple full backup");
         String regex = "";
         Pattern pattern = Pattern.compile(regex);
         Archiver instance = new Archiver(snapshotFile, inFolder, pattern);
@@ -63,7 +66,7 @@ public class ArchiverTest {
      */
     @org.junit.Test
     public void excludeByPattern() throws Exception {
-        System.out.println("excludeByPattern");
+        System.out.println("full backup with filter");
         String regex = "\\..+|.+\\.(xml|html)";
         Pattern pattern = Pattern.compile(regex);
         Archiver instance = new Archiver(snapshotFile, inFolder, pattern);
@@ -77,8 +80,8 @@ public class ArchiverTest {
      * @throws java.lang.Exception
      */
     @org.junit.Test
-    public void noNewsGoodNews() throws Exception {
-        System.out.println("noNewsGoodNews");
+    public void filesNotModified() throws Exception {
+        System.out.println("incremental backup without new or modified files");
         // start with full backup
         String regex = "";
         Pattern pattern = Pattern.compile(regex);
@@ -104,8 +107,8 @@ public class ArchiverTest {
      * @throws java.lang.Exception
      */
     @org.junit.Test
-    public void incremental() throws Exception {
-        System.out.println("incremental");
+    public void modifiedFiles() throws Exception {
+        System.out.println("incremental backup with modified files");
         // start with full backup
         String regex = "";
         Pattern pattern = Pattern.compile(regex);
@@ -114,27 +117,18 @@ public class ArchiverTest {
         assertEquals(5, instance.getFileCount());
         // modify a file
         List<String> lines = new ArrayList<>();
-        lines.add("This file was modified");
-        lines.add(new Date().toString());
+        lines.add("This file was modified at " + new Date().toString());
         Files.write(inFolder.resolve("doc1.txt"), lines, StandardOpenOption.APPEND);
         instance = new Archiver(snapshotFile, inFolder, pattern);
         instance.createArchive();
         assertEquals(1, instance.getFileCount());
     }
 
-    private void extractSampleFiles() throws Exception {
-        InputStream in = ArchiverTest.class.getResourceAsStream("/data/in.zip");
-        ArchiveStreamFactory factory = new ArchiveStreamFactory();
-        try (ArchiveInputStream archiveInputStream
-                = factory.createArchiveInputStream(ArchiveStreamFactory.ZIP, in)) {
-            ZipArchiveEntry entry = (ZipArchiveEntry) archiveInputStream.getNextEntry();
-            while (entry != null) {
-                File outputFile = inFolder.resolve(entry.getName()).toFile();
-                try (OutputStream outStream = new FileOutputStream(outputFile)) {
-                    IOUtils.copy(archiveInputStream, outStream);
-                }
-                entry = (ZipArchiveEntry) archiveInputStream.getNextEntry();
-            }
+    private void deploySampleFiles() throws IOException {
+        for (String fileName : sampleFiles) {
+            InputStream in = ArchiverTest.class.getResourceAsStream("/data/in/" + fileName);
+            OutputStream out = new FileOutputStream(inFolder.resolve(fileName).toFile());
+            IOUtils.copy(in, out);
         }
     }
 }
