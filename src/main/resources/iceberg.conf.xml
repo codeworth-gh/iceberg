@@ -6,13 +6,13 @@
 
     <workFolder>/var/opt/iceberg</workFolder>
     <backupJobs>
-        <job id="job-1">
+        <job id="sample-job">
             <description>Job One</description>
             <source>
                 <path>/var/opt/data/files</path>
                 <excludePattern></excludePattern>
             </source>
-            <target enabled="true">
+            <target enabled="false">
                 <region>eu-west-1</region>
                 <vault>test-1</vault>
             </target>

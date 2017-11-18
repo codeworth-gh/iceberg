@@ -56,6 +56,12 @@ public class Backup {
     private static void startJob(String jobId) throws Exception {
         Configuration config = new Configuration();
         Job job = config.getBackupJobs().get(jobId);
+        if (job == null) {
+            LOGGER.log(Level.SEVERE,
+                    "Unknown job id: {0} - valid jobs found in config file: {1}",
+                    new Object[]{jobId, config.getBackupJobs().keySet()});
+            System.exit(1);
+        }
         Archiver archiver = new Archiver(job, config.getWorkFolder());
         Path archive = archiver.createArchive();
         if (job.isTargetEnabled()) {
@@ -65,7 +71,7 @@ public class Backup {
             }
             Files.delete(archive);
         }
-        LOGGER.log(Level.SEVERE, "The operation completed successfully");
+        LOGGER.log(Level.INFO, "The operation completed successfully");
     }
 
 }
