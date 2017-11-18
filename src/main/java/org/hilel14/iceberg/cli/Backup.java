@@ -60,11 +60,12 @@ public class Backup {
         Path archive = archiver.createArchive();
         if (job.isTargetEnabled()) {
             if (archiver.getFileCount() > 0) {
-                Uploader uploader = new Uploader();
-                uploader.uploadArchive(archive);
+                Uploader uploader = new Uploader(job);
+                uploader.upload(archive);
             }
             Files.delete(archive);
         }
+        LOGGER.log(Level.SEVERE, "The operation completed successfully");
     }
 
 }

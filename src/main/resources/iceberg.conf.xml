@@ -12,9 +12,9 @@
                 <path>/var/opt/data/files</path>
                 <excludePattern></excludePattern>
             </source>
-            <target enabled="false">
+            <target enabled="true">
                 <region>eu-west-1</region>
-                <vault>vault-1</vault>
+                <vault>test-1</vault>
             </target>
         </job>
     </backupJobs>
