@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<conf
+    xmlns:xsi='http://www.w3.org/2001/XMLSchema-instance'
+    xsi:noNamespaceSchemaLocation='iceberg.conf.xsd'>
+
+    <workFolder>/var/opt/iceberg</workFolder>
+    <backupJobs>
+        <job id="job-1">
+            <description>Job One</description>
+            <source>
+                <path>/var/opt/data/files</path>
+                <excludePattern></excludePattern>
+            </source>
+            <target enabled="false">
+                <region>eu-west-1</region>
+                <vault>vault-1</vault>
+            </target>
+        </job>
+    </backupJobs>
+</conf>

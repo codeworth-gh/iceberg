@@ -9,6 +9,6 @@ package org.hilel14.iceberg;
  *
  * @author hilel14
  */
-public class Extractor {
+public class Assembler {
     
 }

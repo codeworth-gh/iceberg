@@ -1,0 +1,53 @@
+<xs:schema
+    xmlns:xs="http://www.w3.org/2001/XMLSchema"
+    elementFormDefault="qualified"
+>
+
+    <xs:annotation>
+        <xs:appinfo>Iceberg Configuration</xs:appinfo>
+        <xs:documentation xml:lang="en">
+            This Schema defines an Iceberg configuration
+        </xs:documentation>
+    </xs:annotation>
+
+    <xs:element name="conf">
+        <xs:complexType>
+            <xs:sequence>
+                <xs:element name="workFolder" type="xs:string"/>
+                <xs:element name="backupJobs">
+                    <xs:complexType>
+                        <xs:sequence>
+                            <xs:element name="job" minOccurs="0" maxOccurs="unbounded">
+                                <xs:complexType>
+                                    <xs:sequence>
+                                        <xs:element type="xs:string" name="description"/>
+                                        <xs:element name="source">
+                                            <xs:complexType>
+                                                <xs:sequence>
+                                                    <xs:element type="xs:string" name="path"/>
+                                                    <xs:element type="xs:string" name="excludePattern"/>
+                                                </xs:sequence>
+                                            </xs:complexType>
+                                        </xs:element>
+                                        <xs:element name="target">
+                                            <xs:complexType>
+                                                <xs:sequence>
+                                                    <xs:element type="xs:string" name="region"/>
+                                                    <xs:element type="xs:string" name="vault"/>
+                                                </xs:sequence>
+                                                <xs:attribute type="xs:boolean" name="enabled"/>
+                                            </xs:complexType>
+                                        </xs:element>
+                                    </xs:sequence>
+                                    <xs:attribute type="xs:ID" name="id"/>
+                                </xs:complexType>
+                            </xs:element>
+                        </xs:sequence>
+                    </xs:complexType>
+                </xs:element>
+            </xs:sequence>
+        </xs:complexType>
+    </xs:element>
+
+</xs:schema>
+
