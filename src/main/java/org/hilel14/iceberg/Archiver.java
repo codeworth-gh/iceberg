@@ -95,7 +95,12 @@ public class Archiver {
         ZipArchiveEntry entry = new ZipArchiveEntry(path.toString());
         entry.setSize(Files.size(path));
         zip.putArchiveEntry(entry);
-        zip.write(Files.readAllBytes(path));
+        byte[] data = new byte[1024];
+        try (InputStream in = new FileInputStream(path.toFile())) {
+            while (in.read(data) > 0) {
+                zip.write(data);
+            }
+        }
         zip.closeArchiveEntry();
     }
 
