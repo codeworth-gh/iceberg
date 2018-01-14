@@ -1,5 +1,6 @@
 package org.hilel14.iceberg;
 
+import org.hilel14.iceberg.model.Job;
 import java.io.InputStream;
 import java.nio.file.Path;
 import java.nio.file.Paths;

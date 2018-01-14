@@ -1,5 +1,6 @@
 package org.hilel14.iceberg;
 
+import org.hilel14.iceberg.model.Job;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;

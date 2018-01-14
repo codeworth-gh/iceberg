@@ -12,7 +12,7 @@ import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 import org.hilel14.iceberg.Archiver;
 import org.hilel14.iceberg.Configuration;
-import org.hilel14.iceberg.Job;
+import org.hilel14.iceberg.model.Job;
 import org.hilel14.iceberg.Uploader;
 
 /**
@@ -57,7 +57,7 @@ public class Backup {
         Configuration config = new Configuration();
         Job job = config.getBackupJobs().get(jobId);
         if (job == null) {
-            LOGGER.log(Level.SEVERE,
+            LOGGER.log(Level.WARNING,
                     "Unknown job id: {0} - valid jobs found in config file: {1}",
                     new Object[]{jobId, config.getBackupJobs().keySet()});
             System.exit(1);

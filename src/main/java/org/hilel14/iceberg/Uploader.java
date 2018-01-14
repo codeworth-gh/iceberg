@@ -1,5 +1,6 @@
 package org.hilel14.iceberg;
 
+import org.hilel14.iceberg.model.Job;
 import com.amazonaws.services.glacier.AmazonGlacier;
 import com.amazonaws.services.glacier.AmazonGlacierClientBuilder;
 import com.amazonaws.services.glacier.transfer.ArchiveTransferManager;
@@ -41,7 +42,7 @@ public class Uploader {
     }
 
     public void upload(Path archive) throws Exception {
-        LOGGER.log(Level.SEVERE, "Uploading {0}", archive);
+        LOGGER.log(Level.INFO, "Uploading {0}", archive);
         transferManager.upload(job.getGlacierVault(), job.getId(), archive.toFile());
     }
 }

@@ -42,4 +42,11 @@ public class MiscTest {
             }
         }
     }
+
+    @org.junit.Test
+    public void testCreationTimeFormat() {
+        String source = "2017-12-08T11:59:02Z";
+        String target = source.replaceAll(":", "-");
+        Assert.assertEquals("2017-12-08T11-59-02Z", target);
+    }
 }

@@ -1,4 +1,4 @@
-package org.hilel14.iceberg;
+package org.hilel14.iceberg.model;
 
 import java.nio.file.Path;
 import java.util.logging.Logger;
