@@ -1,10 +1,14 @@
 package org.hilel14.iceberg;
 
+import java.nio.file.DirectoryStream;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.HashSet;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.Properties;
-import java.util.Set;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
 
@@ -25,16 +29,20 @@ public class Workflow {
     private String glacierRegion;
     private String glacierVault;
 
+    public Workflow() {
+
+    }
+
     public Workflow(String jobName) throws Exception {
         this.jobName = jobName;
         // load global application properties
         Properties p = new Properties();
-        p.load(Workflow.class.getResourceAsStream("iceberg.properties"));
+        p.load(Workflow.class.getResourceAsStream("/iceberg.properties"));
         workFolder = Paths.get(p.getProperty("work.folder"));
         // load current job properties
-        p.load(Workflow.class.getResourceAsStream("jobs/" + jobName + ".properties"));
-        sourceFolder = Paths.get(p.getProperty("soruce.folder"));
-        excludeFilter = Pattern.compile(p.getProperty("soruce.folder"));
+        p.load(Workflow.class.getResourceAsStream("/jobs/" + jobName + ".properties"));
+        sourceFolder = Paths.get(p.getProperty("source.folder"));
+        excludeFilter = Pattern.compile(p.getProperty("exclude.pattern"));
         glacierRegion = p.getProperty("glacier.region");
         glacierVault = p.getProperty("glacier.vault");
     }
@@ -51,15 +59,20 @@ public class Workflow {
         ZipTool zipTool = new ZipTool(workFolder, jobName, sourceFolder, excludeFilter);
         Path zipFile = zipTool.createArchive();
         if (upload) {
-            upload();
+            upload(zipFile);
         }
+        LOGGER.log(Level.INFO, "The operation completed successfully");
     }
 
     /**
      * Upload a Zip file to AWS Glacier vault
+     *
+     * @param zipFile
+     * @throws java.lang.Exception
      */
-    public void upload() {
-
+    public void upload(Path zipFile) throws Exception {
+        GlacierTool glacier = new GlacierTool(glacierRegion, glacierVault);
+        glacier.uploadArchive(glacierVault, zipFile.getFileName().toString(), zipFile);
     }
 
     /**
@@ -68,9 +81,11 @@ public class Workflow {
      *
      * @param inventoryFile A vault inventory file, obtained with AWS CLI or
      * some other tool.
+     * @throws java.lang.Exception
      */
-    public void prepareDownload(Path inventoryFile) {
-
+    public void prepareDownload(Path inventoryFile) throws Exception {
+        GlacierTool glacier = new GlacierTool(glacierRegion, glacierVault);
+        glacier.initiateRetrievalRequests(inventoryFile);
     }
 
     /**
@@ -79,34 +94,40 @@ public class Workflow {
      * @param source A comma-separated-values file, containing job-id and
      * file-name.
      * @param target The folder to store downloaded archives.
+     * @throws java.lang.Exception
      */
-    public void Download(Path source, Path target) {
-
+    public void Download(Path source, Path target) throws Exception {
+        GlacierTool glacier = new GlacierTool(glacierRegion, glacierVault);
+        //glacier.retrieveArchives(source);
     }
 
     /**
      * Extract Zip files found in source folder to target folder, then restore
      * the state of target folder to a point in time, based on snapshot file
-     * found in lash archive. This method will sort the list of source files and
+     * found in last archive. This method will sort the list of source files and
      * start from the first.
      *
      * @param source A folder with Zip files.
      * @param target The folder to restore to.
      * @param last Name of last archive file to restore.
+     * @throws java.lang.Exception
      */
-    public void restore(Path source, Path target, String last) {
-
-    }
-
-    /**
-     * Extract a Zip file to a folder, replacing existing files with the same
-     * path.
-     *
-     * @param source A Zip file
-     * @param target The folder where extracted files are saved
-     */
-    private void extract(Path source, Path target) {
-
+    public void restore(Path source, Path target, String last) throws Exception {
+        LOGGER.log(Level.INFO, "Restoring from {0} to {1}", new Object[]{source, target});
+        ZipTool zip = new ZipTool();
+        // Create and sort a list of zip files
+        List<Path> archives = new ArrayList<>();
+        DirectoryStream<Path> stream = Files.newDirectoryStream(source);
+        for (Path entry : stream) {
+            archives.add(entry);
+        }
+        Collections.sort(archives);
+        // extract each file
+        for (Path archive : archives) {
+            LOGGER.log(Level.INFO, "Extracting {0}", archive);
+            zip.extract(archive, target);
+        }
+        LOGGER.log(Level.INFO, "The operation completed successfully");
     }
 
 }

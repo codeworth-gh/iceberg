@@ -20,6 +20,14 @@ public class Inventory {
     @JsonProperty("VaultARN")
     private String vaultArn;
 
+    public String getVaultName() {
+        // VaultARN example: "arn:aws:glacier:eu-west-1:243247906295:vaults/lenovo
+        String[] parts = vaultArn.split(":");
+        String last = parts[parts.length - 1];
+        String name = last.replace("vaults/", "");
+        return name;
+    }
+
     /**
      * @return the archiveList
      */

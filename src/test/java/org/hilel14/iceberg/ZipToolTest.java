@@ -12,6 +12,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.regex.Pattern;
 import org.apache.commons.compress.utils.IOUtils;
+import org.junit.AfterClass;
 import static org.junit.Assert.assertEquals;
 import org.junit.Test;
 import org.junit.BeforeClass;
@@ -32,6 +33,11 @@ public class ZipToolTest {
     @BeforeClass
     public static void setUpClass() throws IOException {
         parentFolder = Files.createTempDirectory("iceberg");
+    }
+
+    @AfterClass
+    public static void tearDownCloass() throws IOException {
+        System.out.println("delete " + parentFolder);
     }
 
     private void initJob(String testName) throws IOException {
@@ -134,6 +140,26 @@ public class ZipToolTest {
         instance = new ZipTool(workFolder, "modifiedFiles", sourceFolder, pattern);
         instance.createArchive();
         assertEquals(1, instance.getFileCount());
+    }
+
+    /**
+     * Extract an archive and add its content to target folder, overwriting
+     * existing files.
+     *
+     * @throws java.lang.Exception
+     */
+    @org.junit.Test
+    public void extract() throws Exception {
+        System.out.println("extract archive");
+        // create archive to extract
+        initJob("extract");
+        Pattern pattern = Pattern.compile("");
+        ZipTool instance = new ZipTool(workFolder, "fullBackup", sourceFolder, pattern);
+        Path archive = instance.createArchive();
+        // extract created archive
+        Path target = workFolder.resolve("extracted");
+        Files.createDirectory(target);
+        instance.extract(archive, target);
     }
 
 }

@@ -41,7 +41,7 @@ public class Snapshot {
     }
 
     public void save(Path target) throws IOException {
-        LOGGER.log(Level.INFO, "saving snapshot to file {0}", target);
+        LOGGER.log(Level.CONFIG, "saving snapshot to file {0}", target);
         try (
                 FileOutputStream out = new FileOutputStream(target.toFile(), false);
                 JsonGenerator generator = new JsonFactory().createGenerator(out)) {

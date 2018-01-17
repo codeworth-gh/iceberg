@@ -22,13 +22,13 @@ import java.util.logging.Logger;
  *
  * @author hilel14
  */
-public class GlasierTool {
+public class GlacierTool {
 
-    static final Logger LOGGER = Logger.getLogger(GlasierTool.class.getName());
+    static final Logger LOGGER = Logger.getLogger(GlacierTool.class.getName());
     final AmazonGlacier amazonGlacier;
     final ArchiveTransferManager transferManager;
 
-    public GlasierTool(String region, String vault) {
+    public GlacierTool(String region, String vault) {
         // build glacier client
         amazonGlacier = AmazonGlacierClientBuilder
                 .standard()
@@ -51,14 +51,15 @@ public class GlasierTool {
     }
 
     // https://docs.aws.amazon.com/amazonglacier/latest/dev/downloading-an-archive-using-java.html
-    public void initiateRetrievalRequests(Path inventoryFile, String vaultName) throws Exception {
+    public void initiateRetrievalRequests(Path inventoryFile) throws Exception {
         int count = 0;
         LOGGER.log(Level.INFO, "Parsing inventory file {0}", inventoryFile);
         ObjectMapper mapper = new ObjectMapper();
         Inventory inventory = mapper.readValue(inventoryFile.toFile(), Inventory.class);
         LOGGER.log(Level.INFO, "Inventory date: {0}", inventory.getInventoryDate());
         LOGGER.log(Level.INFO, "Vault ARN: {0}", inventory.getVaultArn());
-        Path target = inventoryFile.getParent().resolve(vaultName + "-retrieval-requests.csv");
+        String vaultName = inventory.getVaultName();
+        Path target = inventoryFile.getParent().resolve(vaultName + ".retrieval-requests.csv");
         try (BufferedWriter writer = Files.newBufferedWriter(target, StandardOpenOption.CREATE_NEW)) {
             for (Map map : inventory.getArchiveList()) {
                 String archiveId = map.get("ArchiveId").toString();

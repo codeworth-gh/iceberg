@@ -1,14 +1,17 @@
 package org.hilel14.iceberg;
 
 import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.StandardOpenOption;
 import java.nio.file.attribute.BasicFileAttributes;
+import java.util.Enumeration;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -18,6 +21,8 @@ import java.util.regex.Pattern;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
 import org.apache.commons.compress.archivers.zip.ZipArchiveOutputStream;
+import org.apache.commons.compress.archivers.zip.ZipFile;
+import org.apache.commons.compress.utils.IOUtils;
 
 /**
  *
@@ -26,13 +31,31 @@ import org.apache.commons.compress.archivers.zip.ZipArchiveOutputStream;
 public class ZipTool {
 
     static final Logger LOGGER = Logger.getLogger(ZipTool.class.getName());
-    final private Path workFolder;
-    final private String jobName;
-    final private Path sourceFolder;
-    final private Pattern excludeFilter;
-    final private Set<String> history = new HashSet<>();
-    final private Snapshot snapshot = new Snapshot();
+    private Path workFolder;
+    private String jobName;
+    private Path sourceFolder;
+    private Pattern excludeFilter;
+    private Set<String> history;
+    private Snapshot snapshot;
     private long fileCount = 0;
+
+    public ZipTool() {
+
+    }
+
+    public void extract(Path sourceArchive, Path targetFolder) throws Exception {
+        ZipFile zipFile = new ZipFile(sourceArchive.toFile());
+        final Enumeration<ZipArchiveEntry> entries = zipFile.getEntries();
+        while (entries.hasMoreElements()) {
+            ZipArchiveEntry entry = entries.nextElement();
+            Path targetFile = targetFolder.resolve(entry.getName());
+            Files.createDirectories(targetFile.getParent());
+            try (InputStream in = zipFile.getInputStream(entry);
+                    OutputStream out = new FileOutputStream(targetFile.toString())) {
+                IOUtils.copy(in, out);
+            }
+        }
+    }
 
     public ZipTool(Path workFolder, String jobName,
             Path sourceFolder, Pattern excludeFilter)
@@ -41,7 +64,6 @@ public class ZipTool {
         this.jobName = jobName;
         this.sourceFolder = sourceFolder;
         this.excludeFilter = excludeFilter;
-        loadHistory();
     }
 
     private Path getHistoryPath() {
@@ -49,6 +71,7 @@ public class ZipTool {
     }
 
     private void loadHistory() throws Exception {
+        history = new HashSet<>();
         Path path = getHistoryPath();
         if (Files.exists(path)) {
             LOGGER.log(Level.INFO, "loading history from file {0}", path);
@@ -65,6 +88,8 @@ public class ZipTool {
             throws Exception {
         LOGGER.log(Level.INFO, "Collecting files from {0} excluding pattern {1}",
                 new Object[]{sourceFolder, excludeFilter.pattern()});
+        loadHistory();
+        snapshot = new Snapshot();
         Path target = workFolder.resolve(jobName + ".zip");
         Files.deleteIfExists(target);
         LOGGER.log(Level.INFO, "Adding files to {0}", target);
@@ -81,6 +106,7 @@ public class ZipTool {
             }
         }
         // save history and return
+        LOGGER.log(Level.INFO, "Saving history to file {0}", getHistoryPath());
         Files.write(getHistoryPath(), history, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
         return target;
     }
@@ -89,11 +115,8 @@ public class ZipTool {
         ZipArchiveEntry entry = new ZipArchiveEntry(entryName);
         entry.setSize(Files.size(source));
         outStream.putArchiveEntry(entry);
-        byte[] data = new byte[Files.size(source) > 1024 ? 1024 : (int) Files.size(source)];
         try (InputStream inStream = new FileInputStream(source.toFile())) {
-            while (inStream.read(data) > 0) {
-                outStream.write(data);
-            }
+            IOUtils.copy(inStream, outStream);
         }
         outStream.closeArchiveEntry();
     }

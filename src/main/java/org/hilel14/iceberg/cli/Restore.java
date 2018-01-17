@@ -10,6 +10,7 @@ import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
+import org.hilel14.iceberg.Workflow;
 
 /**
  *
@@ -25,13 +26,11 @@ public class Restore {
         try {
             // Parse the command line arguments
             CommandLine commandLine = new DefaultParser().parse(options, args);
-            Path inventoryFile = Paths.get(commandLine.getOptionValue("i"));
-            Path targetFolder = Paths.get(commandLine.getOptionValue("t"));
-            String glacierRegion = commandLine.getOptionValue("r");
-            String glacierVault = commandLine.getOptionValue("v");
-            // run
-            //Downloader downloader = new Downloader(glacierRegion);
-            //downloader.download(inventoryFile, targetFolder, glacierVault);
+            Path inFolder = Paths.get(commandLine.getOptionValue("i"));
+            Path outFolder = Paths.get(commandLine.getOptionValue("o"));
+            // start job workflow
+            Workflow workflow = new Workflow();
+            workflow.restore(inFolder, outFolder, null);
         } catch (ParseException ex) {
             System.out.println(ex.getMessage());
             new HelpFormatter().printHelp("java [jvm options] " + Restore.class.getName() + " [iceberg options]", options);
@@ -45,24 +44,15 @@ public class Restore {
     static Options addOptions() {
         Options options = new Options();
         Option option;
-        // inventory file
-        option = new Option("i", "inventory", true, "Path to AWS Glacier vault inventory json file");
+        // in folder
+        option = new Option("i", "in-folder", true, "A folder with zip files");
         option.setRequired(true);
         options.addOption(option);
-        // tareget folder
-        option = new Option("t", "target", true, "Path to an empty folder to hold restored data");
-        option.setRequired(true);
-        options.addOption(option);
-        // glacier region
-        option = new Option("r", "region", true, "Name of Glacier region");
-        option.setRequired(true);
-        options.addOption(option);
-        // glacier vault
-        option = new Option("v", "vault", true, "Name of Glacier vault");
+        // out folder
+        option = new Option("o", "out-folder", true, "A folder to store extracted files");
         option.setRequired(true);
         options.addOption(option);
         // return
         return options;
     }
-
 }
