@@ -1,4 +1,4 @@
-package org.hilel14.iceberg.model;
+package org.hilel14.iceberg;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.Date;

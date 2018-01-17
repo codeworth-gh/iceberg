@@ -1,7 +1,5 @@
 package org.hilel14.iceberg.cli;
 
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.apache.commons.cli.CommandLine;
@@ -10,10 +8,7 @@ import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
-import org.hilel14.iceberg.Archiver;
-import org.hilel14.iceberg.Configuration;
-import org.hilel14.iceberg.model.Job;
-import org.hilel14.iceberg.Uploader;
+import org.hilel14.iceberg.Workflow;
 
 /**
  *
@@ -29,9 +24,9 @@ public class Backup {
         try {
             // Parse the command line arguments
             CommandLine commandLine = new DefaultParser().parse(options, args);
-            String jobId = commandLine.getOptionValue("j");
-            // run
-            startJob(jobId);
+            String jobName = commandLine.getOptionValue("j");
+            // start job workflow
+            Workflow workflow = new Workflow(jobName);
         } catch (ParseException ex) {
             System.out.println(ex.getMessage());
             new HelpFormatter().printHelp("java [jvm options] " + Backup.class.getName() + " [iceberg options]", options);
@@ -46,32 +41,11 @@ public class Backup {
         Options options = new Options();
         Option option;
         // job id
-        option = new Option("j", "job-id", true, "ID of a job from iceberg.conf.xml");
+        option = new Option("j", "job-name", true, "Name of job properties file found in resources folder");
         option.setRequired(true);
         options.addOption(option);
         // return
         return options;
-    }
-
-    private static void startJob(String jobId) throws Exception {
-        Configuration config = new Configuration();
-        Job job = config.getBackupJobs().get(jobId);
-        if (job == null) {
-            LOGGER.log(Level.WARNING,
-                    "Unknown job id: {0} - valid jobs found in config file: {1}",
-                    new Object[]{jobId, config.getBackupJobs().keySet()});
-            System.exit(1);
-        }
-        Archiver archiver = new Archiver(job, config.getWorkFolder());
-        Path archive = archiver.createArchive();
-        if (job.isTargetEnabled()) {
-            if (archiver.getFileCount() > 0) {
-                Uploader uploader = new Uploader(job);
-                uploader.upload(archive);
-            }
-            Files.delete(archive);
-        }
-        LOGGER.log(Level.INFO, "The operation completed successfully");
     }
 
 }

@@ -1,6 +1,5 @@
 package org.hilel14.iceberg;
 
-import org.hilel14.iceberg.model.Job;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -10,25 +9,26 @@ import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.regex.Pattern;
 import org.apache.commons.compress.utils.IOUtils;
-import org.junit.After;
-import org.junit.AfterClass;
-import static org.junit.Assert.*;
-import org.junit.Before;
+import static org.junit.Assert.assertEquals;
+import org.junit.Test;
 import org.junit.BeforeClass;
 
 /**
  *
  * @author hilel14
  */
-public class ArchiverTest {
+public class ZipToolTest {
 
-    String[] sampleFiles = new String[]{"doc1.txt", "doc2.txt", "doc3.html", "doc4.xml", ".doc5.txt"};
     static Path parentFolder;
+    static Path sourceFolder;
+    static Path workFolder;
 
-    public ArchiverTest() throws IOException {
+    public ZipToolTest() {
     }
 
     @BeforeClass
@@ -36,32 +36,15 @@ public class ArchiverTest {
         parentFolder = Files.createTempDirectory("iceberg");
     }
 
-    @AfterClass
-    public static void tearDownClass() {
-    }
-
-    @Before
-    public void setUp() {
-
-    }
-
-    @After
-    public void tearDown() {
-    }
-
-    private Job initJob(String id) throws IOException {
-        Path sourceFolder = parentFolder.resolve(id).resolve("in");
+    private void initJob(String testName) throws IOException {
+        sourceFolder = parentFolder.resolve(testName).resolve("in");
         Files.createDirectories(sourceFolder);
-        deploySampleFiles(sourceFolder);
-        Job job = new Job();
-        job.setId(id);
-        job.setSourceFolder(sourceFolder);
-        return job;
-    }
-
-    private void deploySampleFiles(Path sourceFolder) throws IOException {
+        workFolder = parentFolder.resolve(testName).resolve("work");
+        Files.createDirectories(workFolder);
+        // deploy sample files
+        String[] sampleFiles = new String[]{"doc1.txt", "doc2.txt", "doc3.html", "doc4.xml", ".doc5.txt", "doc-6.jpg"};
         for (String fileName : sampleFiles) {
-            InputStream in = ArchiverTest.class.getResourceAsStream("/data/in/" + fileName);
+            InputStream in = ZipToolTest.class.getResourceAsStream("/data/in/" + fileName);
             OutputStream out = new FileOutputStream(sourceFolder.resolve(fileName).toFile());
             IOUtils.copy(in, out);
         }
@@ -72,14 +55,14 @@ public class ArchiverTest {
      *
      * @throws java.lang.Exception
      */
-    @org.junit.Test
+    @Test
     public void fullBackup() throws Exception {
         System.out.println("simple full backup");
-        Job job = initJob("fullBackup");
+        initJob("fullBackup");
         String regex = "";
         Pattern pattern = Pattern.compile(regex);
-        job.setExcludeFilter(pattern);
-        Archiver instance = new Archiver(job, job.getSourceFolder().getParent());
+        Set<String> history = new HashSet<>();
+        ZipTool instance = new ZipTool(workFolder, history, sourceFolder, pattern);
         instance.createArchive();
         assertEquals(5, instance.getFileCount());
     }
@@ -92,11 +75,11 @@ public class ArchiverTest {
     @org.junit.Test
     public void excludeByPattern() throws Exception {
         System.out.println("full backup with filter");
-        Job job = initJob("excludeByPattern");
+        initJob("excludeByPattern");
         String regex = "\\..+|.+\\.(xml|html)";
         Pattern pattern = Pattern.compile(regex);
-        job.setExcludeFilter(pattern);
-        Archiver instance = new Archiver(job, job.getSourceFolder().getParent());
+        Set<String> history = new HashSet<>();
+        ZipTool instance = new ZipTool(workFolder, history, sourceFolder, pattern);
         instance.createArchive();
         assertEquals(2, instance.getFileCount());
     }
@@ -109,25 +92,26 @@ public class ArchiverTest {
     @org.junit.Test
     public void filesNotModified() throws Exception {
         System.out.println("incremental backup without new or modified files");
-        Job job = initJob("filesNotModified");
+        initJob("filesNotModified");
         // start with full backup
         String regex = "";
         Pattern pattern = Pattern.compile(regex);
-        job.setExcludeFilter(pattern);
-        Archiver instance = new Archiver(job, job.getSourceFolder().getParent());
+        Set<String> history = new HashSet<>();
+        ZipTool instance = new ZipTool(workFolder, history, sourceFolder, pattern);
+        instance.createArchive();
         Path archive = instance.createArchive();
         assertEquals(5, instance.getFileCount());
         // change nothing and run incremental backup
         Files.move(archive, archive.getParent().resolve("1." + archive.getFileName()));
-        instance = new Archiver(job, job.getSourceFolder().getParent());
+        instance = new ZipTool(workFolder, history, sourceFolder, pattern);
         instance.createArchive();
         assertEquals(0, instance.getFileCount());
         // copy, move and delete files, then run incremental backup again
         Files.move(archive, archive.getParent().resolve("2." + archive.getFileName()));
-        Files.copy(job.getSourceFolder().resolve("doc1.txt"), job.getSourceFolder().resolve("doc11.txt"));
-        Files.move(job.getSourceFolder().resolve("doc2.txt"), job.getSourceFolder().resolve("doc22.txt"));
-        Files.delete(job.getSourceFolder().resolve("doc3.html"));
-        instance = new Archiver(job, job.getSourceFolder().getParent());
+        Files.copy(sourceFolder.resolve("doc1.txt"), sourceFolder.resolve("doc11.txt"));
+        Files.move(sourceFolder.resolve("doc2.txt"), sourceFolder.resolve("doc22.txt"));
+        Files.delete(sourceFolder.resolve("doc3.html"));
+        instance = new ZipTool(workFolder, history, sourceFolder, pattern);
         instance.createArchive();
         assertEquals(0, instance.getFileCount());
     }
@@ -140,20 +124,20 @@ public class ArchiverTest {
     @org.junit.Test
     public void modifiedFiles() throws Exception {
         System.out.println("incremental backup with modified files");
-        Job job = initJob("modifiedFiles");
+        initJob("modifiedFiles");
         // start with full backup
         String regex = "";
         Pattern pattern = Pattern.compile(regex);
-        job.setExcludeFilter(pattern);
-        Archiver instance = new Archiver(job, job.getSourceFolder().getParent());
+        Set<String> history = new HashSet<>();
+        ZipTool instance = new ZipTool(workFolder, history, sourceFolder, pattern);
         Path archive = instance.createArchive();
         assertEquals(5, instance.getFileCount());
         // modify a file
         Files.move(archive, archive.getParent().resolve("1." + archive.getFileName()));
         List<String> lines = new ArrayList<>();
         lines.add("This file was modified at " + new Date().toString());
-        Files.write(job.getSourceFolder().resolve("doc1.txt"), lines, StandardOpenOption.APPEND);
-        instance = new Archiver(job, job.getSourceFolder().getParent());
+        Files.write(sourceFolder.resolve("doc1.txt"), lines, StandardOpenOption.APPEND);
+        instance = new ZipTool(workFolder, history, sourceFolder, pattern);
         instance.createArchive();
         assertEquals(1, instance.getFileCount());
     }

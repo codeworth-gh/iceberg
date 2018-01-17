@@ -10,7 +10,6 @@ import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
-import org.hilel14.iceberg.Downloader;
 
 /**
  *
@@ -31,8 +30,8 @@ public class Restore {
             String glacierRegion = commandLine.getOptionValue("r");
             String glacierVault = commandLine.getOptionValue("v");
             // run
-            Downloader downloader = new Downloader(glacierRegion);
-            downloader.download(inventoryFile, targetFolder, glacierVault);
+            //Downloader downloader = new Downloader(glacierRegion);
+            //downloader.download(inventoryFile, targetFolder, glacierVault);
         } catch (ParseException ex) {
             System.out.println(ex.getMessage());
             new HelpFormatter().printHelp("java [jvm options] " + Restore.class.getName() + " [iceberg options]", options);
