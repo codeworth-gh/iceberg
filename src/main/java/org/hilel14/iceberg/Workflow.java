@@ -41,16 +41,18 @@ public class Workflow {
 
     /**
      * Create a Zip file containing all files that changed since last backup.
-     * Optionally use filter to exclude some files.
+     * Optionally use filter to exclude some files. Optionally upload to
+     * Glacier.
      *
-     * @return
+     * @param upload
      * @throws java.lang.Exception
      */
-    public Path createArchive() throws Exception {
-        Set<String> history = new HashSet<>();
-        ZipTool zipTool = new ZipTool(workFolder, history, sourceFolder, excludeFilter);
+    public void createArchive(boolean upload) throws Exception {
+        ZipTool zipTool = new ZipTool(workFolder, jobName, sourceFolder, excludeFilter);
         Path zipFile = zipTool.createArchive();
-        return zipFile;
+        if (upload) {
+            upload();
+        }
     }
 
     /**

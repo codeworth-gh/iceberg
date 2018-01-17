@@ -9,9 +9,7 @@ import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 import java.util.regex.Pattern;
 import org.apache.commons.compress.utils.IOUtils;
 import static org.junit.Assert.assertEquals;
@@ -61,8 +59,7 @@ public class ZipToolTest {
         initJob("fullBackup");
         String regex = "";
         Pattern pattern = Pattern.compile(regex);
-        Set<String> history = new HashSet<>();
-        ZipTool instance = new ZipTool(workFolder, history, sourceFolder, pattern);
+        ZipTool instance = new ZipTool(workFolder, "fullBackup", sourceFolder, pattern);
         instance.createArchive();
         assertEquals(5, instance.getFileCount());
     }
@@ -78,8 +75,7 @@ public class ZipToolTest {
         initJob("excludeByPattern");
         String regex = "\\..+|.+\\.(xml|html)";
         Pattern pattern = Pattern.compile(regex);
-        Set<String> history = new HashSet<>();
-        ZipTool instance = new ZipTool(workFolder, history, sourceFolder, pattern);
+        ZipTool instance = new ZipTool(workFolder, "excludeByPattern", sourceFolder, pattern);
         instance.createArchive();
         assertEquals(2, instance.getFileCount());
     }
@@ -96,14 +92,13 @@ public class ZipToolTest {
         // start with full backup
         String regex = "";
         Pattern pattern = Pattern.compile(regex);
-        Set<String> history = new HashSet<>();
-        ZipTool instance = new ZipTool(workFolder, history, sourceFolder, pattern);
+        ZipTool instance = new ZipTool(workFolder, "filesNotModified", sourceFolder, pattern);
         instance.createArchive();
         Path archive = instance.createArchive();
         assertEquals(5, instance.getFileCount());
         // change nothing and run incremental backup
         Files.move(archive, archive.getParent().resolve("1." + archive.getFileName()));
-        instance = new ZipTool(workFolder, history, sourceFolder, pattern);
+        instance = new ZipTool(workFolder, "filesNotModified", sourceFolder, pattern);
         instance.createArchive();
         assertEquals(0, instance.getFileCount());
         // copy, move and delete files, then run incremental backup again
@@ -111,7 +106,7 @@ public class ZipToolTest {
         Files.copy(sourceFolder.resolve("doc1.txt"), sourceFolder.resolve("doc11.txt"));
         Files.move(sourceFolder.resolve("doc2.txt"), sourceFolder.resolve("doc22.txt"));
         Files.delete(sourceFolder.resolve("doc3.html"));
-        instance = new ZipTool(workFolder, history, sourceFolder, pattern);
+        instance = new ZipTool(workFolder, "filesNotModified", sourceFolder, pattern);
         instance.createArchive();
         assertEquals(0, instance.getFileCount());
     }
@@ -128,8 +123,7 @@ public class ZipToolTest {
         // start with full backup
         String regex = "";
         Pattern pattern = Pattern.compile(regex);
-        Set<String> history = new HashSet<>();
-        ZipTool instance = new ZipTool(workFolder, history, sourceFolder, pattern);
+        ZipTool instance = new ZipTool(workFolder, "modifiedFiles", sourceFolder, pattern);
         Path archive = instance.createArchive();
         assertEquals(5, instance.getFileCount());
         // modify a file
@@ -137,7 +131,7 @@ public class ZipToolTest {
         List<String> lines = new ArrayList<>();
         lines.add("This file was modified at " + new Date().toString());
         Files.write(sourceFolder.resolve("doc1.txt"), lines, StandardOpenOption.APPEND);
-        instance = new ZipTool(workFolder, history, sourceFolder, pattern);
+        instance = new ZipTool(workFolder, "modifiedFiles", sourceFolder, pattern);
         instance.createArchive();
         assertEquals(1, instance.getFileCount());
     }

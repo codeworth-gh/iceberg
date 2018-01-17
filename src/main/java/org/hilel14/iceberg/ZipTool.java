@@ -9,6 +9,8 @@ import java.nio.file.Path;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.StandardOpenOption;
 import java.nio.file.attribute.BasicFileAttributes;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -25,25 +27,45 @@ public class ZipTool {
 
     static final Logger LOGGER = Logger.getLogger(ZipTool.class.getName());
     final private Path workFolder;
-    final private Set<String> history;
+    final private String jobName;
     final private Path sourceFolder;
     final private Pattern excludeFilter;
-    Snapshot snapshot = new Snapshot();
+    final private Set<String> history = new HashSet<>();
+    final private Snapshot snapshot = new Snapshot();
     private long fileCount = 0;
 
-    public ZipTool(Path workFolder, Set<String> history,
-            Path sourceFolder, Pattern excludeFilter) {
+    public ZipTool(Path workFolder, String jobName,
+            Path sourceFolder, Pattern excludeFilter)
+            throws Exception {
         this.workFolder = workFolder;
-        this.history = history;
+        this.jobName = jobName;
         this.sourceFolder = sourceFolder;
         this.excludeFilter = excludeFilter;
+        loadHistory();
+    }
+
+    private Path getHistoryPath() {
+        return workFolder.resolve(jobName + ".history");
+    }
+
+    private void loadHistory() throws Exception {
+        Path path = getHistoryPath();
+        if (Files.exists(path)) {
+            LOGGER.log(Level.INFO, "loading history from file {0}", path);
+            List<String> lines = Files.readAllLines(path);
+            lines.forEach((line) -> {
+                history.add(line);
+            });
+        } else {
+            LOGGER.log(Level.INFO, "history file {0} not found, assuming full backup", path);
+        }
     }
 
     public Path createArchive()
             throws Exception {
         LOGGER.log(Level.INFO, "Collecting files from {0} excluding pattern {1}",
                 new Object[]{sourceFolder, excludeFilter.pattern()});
-        Path target = workFolder.resolve("iceberg-archive.zip");
+        Path target = workFolder.resolve(jobName + ".zip");
         Files.deleteIfExists(target);
         LOGGER.log(Level.INFO, "Adding files to {0}", target);
         try (ZipArchiveOutputStream zipStream = new ZipArchiveOutputStream(target.toFile())) {
@@ -58,6 +80,8 @@ public class ZipTool {
                 Files.delete(snapshotFile);
             }
         }
+        // save history and return
+        Files.write(getHistoryPath(), history, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
         return target;
     }
 
