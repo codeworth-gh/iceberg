@@ -71,8 +71,8 @@ public class Workflow {
      * @throws java.lang.Exception
      */
     public void upload(Path zipFile) throws Exception {
-        GlacierTool glacier = new GlacierTool(glacierRegion, glacierVault);
-        glacier.uploadArchive(glacierVault, zipFile.getFileName().toString(), zipFile);
+        GlacierTool glacier = new GlacierTool();
+        glacier.uploadArchive(glacierRegion, glacierVault, zipFile.getFileName().toString(), zipFile);
     }
 
     /**
@@ -84,8 +84,9 @@ public class Workflow {
      * @throws java.lang.Exception
      */
     public void prepareDownload(Path inventoryFile) throws Exception {
-        GlacierTool glacier = new GlacierTool(glacierRegion, glacierVault);
+        GlacierTool glacier = new GlacierTool();
         glacier.initiateRetrievalRequests(inventoryFile);
+        LOGGER.log(Level.INFO, "The operation completed successfully");
     }
 
     /**
@@ -97,7 +98,7 @@ public class Workflow {
      * @throws java.lang.Exception
      */
     public void Download(Path source, Path target) throws Exception {
-        GlacierTool glacier = new GlacierTool(glacierRegion, glacierVault);
+        GlacierTool glacier = new GlacierTool();
         //glacier.retrieveArchives(source);
     }
 

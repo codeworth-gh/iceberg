@@ -2,6 +2,7 @@ package org.hilel14.iceberg;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -20,12 +21,21 @@ public class Inventory {
     @JsonProperty("VaultARN")
     private String vaultArn;
 
-    public String getVaultName() {
-        // VaultARN example: "arn:aws:glacier:eu-west-1:243247906295:vaults/lenovo
+    /**
+     * Extract information from AWS vault
+     * <a href=https://docs.aws.amazon.com/general/latest/gr/aws-arns-and-namespaces.html>ARN</a>.
+     * Example: arn:aws:glacier:eu-west-1:243247906295:vaults/lenovo
+     *
+     * @return A map containing AWS account, region and vault name.
+     */
+    public Map<String, String> extractVaultArn() {
+
+        Map<String, String> map = new HashMap<>();
         String[] parts = vaultArn.split(":");
-        String last = parts[parts.length - 1];
-        String name = last.replace("vaults/", "");
-        return name;
+        map.put("region", parts[3]);
+        map.put("account", parts[4]);
+        map.put("vault", parts[5].replace("vaults/", ""));
+        return map;
     }
 
     /**
