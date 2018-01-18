@@ -92,14 +92,17 @@ public class Workflow {
     /**
      * Download all archives in source file and save them to target folder.
      *
-     * @param source A comma-separated-values file, containing job-id and
+     * @param inputFile A comma-separated-values file, containing job-id and
      * file-name.
-     * @param target The folder to store downloaded archives.
+     * @param targetFolder The folder to store downloaded archives.
      * @throws java.lang.Exception
      */
-    public void Download(Path source, Path target) throws Exception {
+    public void Download(Path inputFile, Path targetFolder) throws Exception {
+        String vault = inputFile.getParent().getFileName().toString();
+        String region = inputFile.getParent().getParent().getFileName().toString();
         GlacierTool glacier = new GlacierTool();
-        //glacier.retrieveArchives(source);
+        glacier.retrieveArchives(inputFile, targetFolder, region, vault);
+        LOGGER.log(Level.INFO, "The operation completed successfully");
     }
 
     /**

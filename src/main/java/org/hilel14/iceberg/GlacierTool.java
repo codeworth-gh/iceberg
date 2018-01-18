@@ -93,16 +93,15 @@ public class GlacierTool {
         return result;
     }
 
-    public void retrieveArchives(Path inputFile) throws Exception {
-        String vault = inputFile.getParent().getFileName().toString();
-        String region = inputFile.getParent().getParent().getFileName().toString();
+    public void retrieveArchives(Path inputFile, Path targetFolder, String region, String vault)
+            throws Exception {
+        LOGGER.log(Level.INFO, "downloading archives in file {0}", inputFile);
         // build glacier client
         AmazonGlacier glacier = AmazonGlacierClientBuilder
                 .standard()
                 .withRegion(region)
                 .build();
         // retrive all archives in requests file
-        Path targetFolder = inputFile.getParent().resolve("archives");
         Files.createDirectories(targetFolder);
         List<String> retrievalJobs = Files.readAllLines(inputFile);
         for (String retrievalJob : retrievalJobs) {
@@ -111,7 +110,8 @@ public class GlacierTool {
             String targetFile = parts[1];
             retrieveArchive(glacier, vault, jobId, targetFolder.resolve(targetFile));
         }
-        LOGGER.log(Level.INFO, "{0} archives retrieved", retrievalJobs.size());
+        LOGGER.log(Level.INFO, "{0} archives downloaded to {1}",
+                new Object[]{retrievalJobs.size(), targetFolder});
     }
 
     private void retrieveArchive(AmazonGlacier glacier, String vault,
