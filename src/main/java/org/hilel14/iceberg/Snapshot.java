@@ -1,22 +1,12 @@
 package org.hilel14.iceberg;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.core.JsonFactory;
-import com.fasterxml.jackson.core.JsonGenerator;
-import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.core.util.DefaultPrettyPrinter;
-import com.fasterxml.jackson.databind.JsonNode;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
 import java.nio.file.Path;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -35,53 +25,6 @@ public class Snapshot {
 
     @JsonProperty("date")
     private String date = new Date().toString();
-
-    private void parse(Path source) throws Exception {
-        try (
-                FileInputStream in = new FileInputStream(source.toFile());
-                JsonParser parser = new JsonFactory().createParser(in)) {
-            JsonNode rootNode = null;
-            description = rootNode.path("description").asText();
-            date = rootNode.path("date").asText();
-            Iterator<JsonNode> elements = rootNode.path("elements").elements();
-            while (elements.hasNext()) {
-                JsonNode element = elements.next();
-                String hash = element.path("hash").asText();
-                Set<String> paths = new HashSet<>();
-                Iterator<JsonNode> pathsNode = element.path("paths").elements();
-                while (pathsNode.hasNext()) {
-                    paths.add(pathsNode.next().asText());
-                }
-                map.put(hash, paths);
-            }
-        }
-    }
-
-    private void save(Path target) throws IOException {
-        LOGGER.log(Level.CONFIG, "saving snapshot to file {0}", target);
-        try (
-                FileOutputStream out = new FileOutputStream(target.toFile(), false);
-                JsonGenerator generator = new JsonFactory().createGenerator(out)) {
-            generator.setPrettyPrinter(new DefaultPrettyPrinter());
-            generator.writeStartObject();
-            generator.writeStringField("description", "Iceberg snapshot");
-            generator.writeStringField("date", new Date().toString());
-            generator.writeArrayFieldStart("elements");
-            for (String hash : map.keySet()) {
-                generator.writeStartObject();
-                generator.writeStringField("hash", hash);
-                generator.writeArrayFieldStart("paths");
-                for (String path : map.get(hash)) {
-                    generator.writeString(path);
-                }
-                generator.writeEndArray();
-                generator.writeEndObject();
-            }
-            generator.writeEndArray();
-            generator.writeEndObject(); //closing root object
-            generator.flush();
-        }
-    }
 
     public void addPath(String hash, Path path) {
         Set<String> paths = map.containsKey(hash) ? map.get(hash) : new HashSet<>();
