@@ -1,12 +1,15 @@
 package org.hilel14.iceberg;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.nio.file.DirectoryStream;
 import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
+import java.nio.file.LinkOption;
 import java.nio.file.Path;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.StandardOpenOption;
@@ -36,26 +39,10 @@ public class ZipTool {
     private Path sourceFolder;
     private Pattern excludeFilter;
     private Set<String> history;
-    private Snapshot snapshot;
     private long fileCount = 0;
 
     public ZipTool() {
 
-    }
-
-    public void extract(Path sourceArchive, Path targetFolder) throws Exception {
-        try (ZipFile zipFile = new ZipFile(sourceArchive.toFile())) {
-            final Enumeration<ZipArchiveEntry> entries = zipFile.getEntries();
-            while (entries.hasMoreElements()) {
-                ZipArchiveEntry entry = entries.nextElement();
-                Path targetFile = targetFolder.resolve(entry.getName());
-                Files.createDirectories(targetFile.getParent());
-                try (InputStream in = zipFile.getInputStream(entry);
-                        OutputStream out = new FileOutputStream(targetFile.toString())) {
-                    IOUtils.copy(in, out);
-                }
-            }
-        }
     }
 
     public ZipTool(Path workFolder, String jobName,
@@ -90,18 +77,18 @@ public class ZipTool {
         LOGGER.log(Level.INFO, "Collecting files from {0} excluding pattern {1}",
                 new Object[]{sourceFolder, excludeFilter.pattern()});
         loadHistory();
-        snapshot = new Snapshot();
+        Snapshot snapshot = new Snapshot();
         Path target = workFolder.resolve(jobName + ".zip");
         Files.deleteIfExists(target);
         LOGGER.log(Level.INFO, "Adding files to {0}", target);
         try (ZipArchiveOutputStream zipStream = new ZipArchiveOutputStream(target.toFile())) {
-            Files.walkFileTree(sourceFolder, new ZipTool.Zipper(zipStream));
+            Files.walkFileTree(sourceFolder, new ZipTool.Zipper(zipStream, snapshot));
             LOGGER.log(Level.INFO, "{0} files added, archive size is {1} bytes",
                     new Object[]{fileCount, Files.size(target)});
             // add snapshot file to archive
             if (fileCount > 0) {
                 Path snapshotFile = workFolder.resolve("snapshot.json");
-                snapshot.save(snapshotFile);
+                new ObjectMapper().writeValue(snapshotFile.toFile(), snapshot);
                 addToZip(snapshotFile, snapshotFile.getFileName().toString(), zipStream);
                 Files.delete(snapshotFile);
             }
@@ -122,12 +109,58 @@ public class ZipTool {
         outStream.closeArchiveEntry();
     }
 
+    public void extract(Path sourceArchive, Path targetFolder) throws Exception {
+        try (ZipFile zipFile = new ZipFile(sourceArchive.toFile())) {
+            final Enumeration<ZipArchiveEntry> entries = zipFile.getEntries();
+            while (entries.hasMoreElements()) {
+                ZipArchiveEntry entry = entries.nextElement();
+                Path targetFile = targetFolder.resolve(entry.getName());
+                Files.createDirectories(targetFile.getParent());
+                try (InputStream in = zipFile.getInputStream(entry);
+                        OutputStream out = new FileOutputStream(targetFile.toString())) {
+                    IOUtils.copy(in, out);
+                }
+            }
+        }
+    }
+
+    /**
+     * Restore state of target folder
+     *
+     * @param target A folder with files extracted from archives
+     * @throws java.lang.Exception
+     */
+    public void restore(Path target) throws Exception {
+        Path inventoryFile = target.resolve("snapshot.json");
+        Snapshot snapshot
+                = new ObjectMapper().readValue(inventoryFile.toFile(), Snapshot.class);
+        // delete files in target folder and not in snapshot
+        try (DirectoryStream<Path> stream = Files.newDirectoryStream(target, (entry) -> {
+            return Files.isDirectory(entry, LinkOption.NOFOLLOW_LINKS);
+        })) {
+            for (Path folder : stream) {
+                try (DirectoryStream<Path> items = Files.newDirectoryStream(folder)) {
+                    for (Path item : items) {
+                        Path relative = target.relativize(item);
+                        if (!snapshot.containsPath(relative.toString())) {
+                            LOGGER.log(Level.INFO, "Deleting {0}", relative);
+                            Files.delete(item);
+                        }
+                    }
+                }
+            }
+        }
+
+    }
+
     class Zipper extends SimpleFileVisitor<Path> {
 
-        ZipArchiveOutputStream zipStream;
+        final ZipArchiveOutputStream zipStream;
+        final Snapshot snapshot;
 
-        public Zipper(ZipArchiveOutputStream zipStream) {
+        public Zipper(ZipArchiveOutputStream zipStream, Snapshot snapshot) {
             this.zipStream = zipStream;
+            this.snapshot = snapshot;
         }
 
         @Override
@@ -149,7 +182,7 @@ public class ZipTool {
                 fileCount++;
             }
             // update snapshot and continue
-            snapshot.add(hash, getRelativePath(path));
+            snapshot.addPath(hash, getRelativePath(path));
             return FileVisitResult.CONTINUE;
         }
 

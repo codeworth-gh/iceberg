@@ -1,20 +1,11 @@
 {
+    "elements": {
+        "ef360cfd049462dba521b85d3ae0e5bc": ["in/doc4.xml"],
+        "a40d710d62f15ecac49d7c851f826757": ["in/doc-6.jpg"],
+        "b738ec4ed9bcfc824db5ae5789a06295": ["in/doc2.txt", "in/doc1.txt"],
+        "21afe91a2f53d03cbd97ae0076dc5f0f": ["in/doc3.html"],
+        "75ee90e9efb7c8233142c36d74c79a69": ["in/.doc5.txt"]
+    },
     "description": "Iceberg snapshot",
-    "date": "Wed Jan 17 10:13:52 IST 2018",
-    "elements": [{
-            "hash": "ef360cfd049462dba521b85d3ae0e5bc",
-            "paths": ["in/doc4.xml"]
-        }, {
-            "hash": "a40d710d62f15ecac49d7c851f826757",
-            "paths": ["in/doc-6.jpg"]
-        }, {
-            "hash": "b738ec4ed9bcfc824db5ae5789a06295",
-            "paths": ["in/doc2.txt", "in/doc1.txt"]
-        }, {
-            "hash": "21afe91a2f53d03cbd97ae0076dc5f0f",
-            "paths": ["in/doc3.html"]
-        }, {
-            "hash": "75ee90e9efb7c8233142c36d74c79a69",
-            "paths": ["in/.doc5.txt"]
-        }]
+    "date": "Fri Jan 19 09:59:08 IST 2018"
 }

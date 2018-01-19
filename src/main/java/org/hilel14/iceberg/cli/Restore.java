@@ -30,7 +30,7 @@ public class Restore {
             Path outFolder = Paths.get(commandLine.getOptionValue("o"));
             // start job workflow
             Workflow workflow = new Workflow();
-            workflow.restore(inFolder, outFolder, null);
+            workflow.restore(inFolder, outFolder);
         } catch (ParseException ex) {
             System.out.println(ex.getMessage());
             new HelpFormatter().printHelp("java [jvm options] " + Restore.class.getName() + " [iceberg options]", options);

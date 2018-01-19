@@ -1,5 +1,6 @@
 package org.hilel14.iceberg;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -107,16 +108,15 @@ public class Workflow {
 
     /**
      * Extract Zip files found in source folder to target folder, then restore
-     * the state of target folder to a point in time, based on snapshot file
-     * found in last archive. This method will sort the list of source files and
-     * start from the first.
+     * target folder to the state captured on snapshot file, found in last
+     * archive. This method will sort the list of source files and start from
+     * the first, which is expected to be a full backup.
      *
      * @param source A folder with Zip files.
      * @param target The folder to restore to.
-     * @param last Name of last archive file to restore.
      * @throws java.lang.Exception
      */
-    public void restore(Path source, Path target, String last) throws Exception {
+    public void restore(Path source, Path target) throws Exception {
         LOGGER.log(Level.INFO, "Restoring from {0} to {1}", new Object[]{source, target});
         ZipTool zip = new ZipTool();
         // Create and sort a list of zip files
@@ -131,6 +131,8 @@ public class Workflow {
             LOGGER.log(Level.INFO, "Extracting {0}", archive);
             zip.extract(archive, target);
         }
+        // restore target folder
+        zip.restore(target);
         LOGGER.log(Level.INFO, "The operation completed successfully");
     }
 

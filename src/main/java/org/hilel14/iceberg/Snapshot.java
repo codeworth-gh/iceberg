@@ -1,13 +1,15 @@
 package org.hilel14.iceberg;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.util.DefaultPrettyPrinter;
 import com.fasterxml.jackson.databind.JsonNode;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -24,23 +26,38 @@ import java.util.logging.Logger;
 public class Snapshot {
 
     static final Logger LOGGER = Logger.getLogger(Snapshot.class.getName());
-    private final Map<String, Set<Path>> map = new HashMap<>();
 
-    private void parse(JsonNode rootNode) {
-        Iterator<JsonNode> elements = rootNode.path("elements").elements();
-        while (elements.hasNext()) {
-            JsonNode element = elements.next();
-            String hash = element.path("hash").asText();
-            Set<Path> paths = new HashSet<>();
-            Iterator<JsonNode> pathsNode = element.path("paths").elements();
-            while (pathsNode.hasNext()) {
-                paths.add(Paths.get(pathsNode.next().asText()));
+    @JsonProperty("elements")
+    private Map<String, Set<String>> map = new HashMap<>();
+
+    @JsonProperty("description")
+    private String description = "Iceberg snapshot";
+
+    @JsonProperty("date")
+    private String date = new Date().toString();
+
+    private void parse(Path source) throws Exception {
+        try (
+                FileInputStream in = new FileInputStream(source.toFile());
+                JsonParser parser = new JsonFactory().createParser(in)) {
+            JsonNode rootNode = null;
+            description = rootNode.path("description").asText();
+            date = rootNode.path("date").asText();
+            Iterator<JsonNode> elements = rootNode.path("elements").elements();
+            while (elements.hasNext()) {
+                JsonNode element = elements.next();
+                String hash = element.path("hash").asText();
+                Set<String> paths = new HashSet<>();
+                Iterator<JsonNode> pathsNode = element.path("paths").elements();
+                while (pathsNode.hasNext()) {
+                    paths.add(pathsNode.next().asText());
+                }
+                map.put(hash, paths);
             }
-            map.put(hash, paths);
         }
     }
 
-    public void save(Path target) throws IOException {
+    private void save(Path target) throws IOException {
         LOGGER.log(Level.CONFIG, "saving snapshot to file {0}", target);
         try (
                 FileOutputStream out = new FileOutputStream(target.toFile(), false);
@@ -54,8 +71,8 @@ public class Snapshot {
                 generator.writeStartObject();
                 generator.writeStringField("hash", hash);
                 generator.writeArrayFieldStart("paths");
-                for (Path path : map.get(hash)) {
-                    generator.writeString(path.toString());
+                for (String path : map.get(hash)) {
+                    generator.writeString(path);
                 }
                 generator.writeEndArray();
                 generator.writeEndObject();
@@ -66,17 +83,61 @@ public class Snapshot {
         }
     }
 
-    public void add(String hash, Path path) {
-        Set<Path> paths = map.containsKey(hash) ? map.get(hash) : new HashSet<>();
-        paths.add(path);
+    public void addPath(String hash, Path path) {
+        Set<String> paths = map.containsKey(hash) ? map.get(hash) : new HashSet<>();
+        paths.add(path.toString());
         map.put(hash, paths);
     }
 
+    public boolean containsPath(String path) {
+        for (Set<String> set : map.values()) {
+            if (set.contains(path)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     /**
-     * @return the hash-to-paths map
+     * @return the map
      */
-    public Map<String, Set<Path>> getMap() {
+    public Map<String, Set<String>> getMap() {
         return map;
+    }
+
+    /**
+     * @param map the map to set
+     */
+    public void setMap(Map<String, Set<String>> map) {
+        this.map = map;
+    }
+
+    /**
+     * @return the description
+     */
+    public String getDescription() {
+        return description;
+    }
+
+    /**
+     * @param description the description to set
+     */
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
+    /**
+     * @return the date
+     */
+    public String getDate() {
+        return date;
+    }
+
+    /**
+     * @param date the date to set
+     */
+    public void setDate(String date) {
+        this.date = date;
     }
 
 }
