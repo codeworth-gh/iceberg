@@ -44,15 +44,16 @@ public class ZipTool {
     }
 
     public void extract(Path sourceArchive, Path targetFolder) throws Exception {
-        ZipFile zipFile = new ZipFile(sourceArchive.toFile());
-        final Enumeration<ZipArchiveEntry> entries = zipFile.getEntries();
-        while (entries.hasMoreElements()) {
-            ZipArchiveEntry entry = entries.nextElement();
-            Path targetFile = targetFolder.resolve(entry.getName());
-            Files.createDirectories(targetFile.getParent());
-            try (InputStream in = zipFile.getInputStream(entry);
-                    OutputStream out = new FileOutputStream(targetFile.toString())) {
-                IOUtils.copy(in, out);
+        try (ZipFile zipFile = new ZipFile(sourceArchive.toFile())) {
+            final Enumeration<ZipArchiveEntry> entries = zipFile.getEntries();
+            while (entries.hasMoreElements()) {
+                ZipArchiveEntry entry = entries.nextElement();
+                Path targetFile = targetFolder.resolve(entry.getName());
+                Files.createDirectories(targetFile.getParent());
+                try (InputStream in = zipFile.getInputStream(entry);
+                        OutputStream out = new FileOutputStream(targetFile.toString())) {
+                    IOUtils.copy(in, out);
+                }
             }
         }
     }
