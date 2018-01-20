@@ -67,15 +67,22 @@ public class Snapshot {
                 throws IOException {
             Path relative = baseFolder.getParent().relativize(path);
             if (!containsPath(relative.toString())) {
-                LOGGER.log(Level.INFO, "Deleting {0}", relative);
+                LOGGER.log(Level.INFO, "Deleting file {0}", relative);
                 Files.delete(path);
             }
             return FileVisitResult.CONTINUE;
         }
 
         @Override
-        public FileVisitResult postVisitDirectory(Path dir, IOException ex) {
-
+        public FileVisitResult postVisitDirectory(Path dir, IOException ex)
+                throws IOException {
+            if (!dir.equals(baseFolder)) {
+                Path relative = baseFolder.getParent().relativize(dir);
+                if (!containsPath(relative.toString())) {
+                    LOGGER.log(Level.INFO, "Deleting folder {0}", relative);
+                    Files.delete(dir);
+                }
+            }
             return FileVisitResult.CONTINUE;
         }
     }
