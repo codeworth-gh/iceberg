@@ -12,6 +12,9 @@ import java.nio.file.Path;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.StandardOpenOption;
 import java.nio.file.attribute.BasicFileAttributes;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.Enumeration;
 import java.util.HashSet;
 import java.util.List;
@@ -32,6 +35,7 @@ import org.apache.commons.compress.utils.IOUtils;
 public class ZipTool {
 
     static final Logger LOGGER = Logger.getLogger(ZipTool.class.getName());
+    DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd.HH-mm-ss");
     private Path workFolder;
     private String jobName;
     private Path sourceFolder;
@@ -76,7 +80,7 @@ public class ZipTool {
                 new Object[]{sourceFolder, excludeFilter.pattern()});
         loadHistory();
         Snapshot snapshot = new Snapshot();
-        Path target = workFolder.resolve(jobName + ".zip");
+        Path target = workFolder.resolve(jobName + "." + dateFormat.format(new Date()) + ".zip");
         Files.deleteIfExists(target);
         LOGGER.log(Level.INFO, "Adding files to {0}", target);
         try (ZipArchiveOutputStream zipStream = new ZipArchiveOutputStream(target.toFile())) {
