@@ -1,12 +1,18 @@
 package org.hilel14.iceberg;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import java.io.IOException;
+import java.nio.file.FileVisitResult;
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.SimpleFileVisitor;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -32,13 +38,46 @@ public class Snapshot {
         map.put(hash, paths);
     }
 
-    public boolean containsPath(String path) {
-        for (Set<String> set : map.values()) {
-            if (set.contains(path)) {
-                return true;
-            }
+    private boolean containsPath(String path) {
+        return map.values().stream().anyMatch((set) -> (set.contains(path)));
+    }
+
+    /**
+     * Restore state of target folder
+     *
+     * @param target A folder with files extracted from archives
+     * @throws java.lang.Exception
+     */
+    public void restore(Path target) throws Exception {
+        // delete files and empty folders in target folder and not in snapshot
+        LOGGER.log(Level.INFO, "Deleting old files from {0}", target);
+        Files.walkFileTree(target, new Cleaner(target));
+    }
+
+    class Cleaner extends SimpleFileVisitor<Path> {
+
+        Path baseFolder;
+
+        public Cleaner(Path baseFolder) {
+            this.baseFolder = baseFolder;
         }
-        return false;
+
+        @Override
+        public FileVisitResult visitFile(Path path, BasicFileAttributes attrs)
+                throws IOException {
+            Path relative = baseFolder.getParent().relativize(path);
+            if (!containsPath(relative.toString())) {
+                LOGGER.log(Level.INFO, "Deleting {0}", relative);
+                Files.delete(path);
+            }
+            return FileVisitResult.CONTINUE;
+        }
+
+        @Override
+        public FileVisitResult postVisitDirectory(Path dir, IOException ex) {
+
+            return FileVisitResult.CONTINUE;
+        }
     }
 
     /**

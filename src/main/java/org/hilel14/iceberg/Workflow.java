@@ -1,8 +1,11 @@
 package org.hilel14.iceberg;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
+import java.nio.file.LinkOption;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -121,8 +124,8 @@ public class Workflow {
         ZipTool zip = new ZipTool();
         // Create and sort a list of zip files
         List<Path> archives = new ArrayList<>();
-        DirectoryStream<Path> stream = Files.newDirectoryStream(source);
-        for (Path entry : stream) {
+        DirectoryStream<Path> zipFiles = Files.newDirectoryStream(source, "*.zip");
+        for (Path entry : zipFiles) {
             archives.add(entry);
         }
         Collections.sort(archives);
@@ -132,8 +135,23 @@ public class Workflow {
             zip.extract(archive, target);
         }
         // restore target folder
-        zip.restore(target);
+        Path inventoryFile = target.resolve("snapshot.json");
+        Snapshot snapshot
+                = new ObjectMapper().readValue(inventoryFile.toFile(), Snapshot.class);
+        Path baseFolder = findFirstFolder(target);
+        snapshot.restore(baseFolder);
         LOGGER.log(Level.INFO, "The operation completed successfully");
+    }
+
+    public static Path findFirstFolder(Path parent) throws IOException {
+        try (DirectoryStream<Path> baseFolders = Files.newDirectoryStream(parent, (entry) -> {
+            return Files.isDirectory(entry, LinkOption.NOFOLLOW_LINKS);
+        })) {
+            for (Path subFolder : baseFolders) {
+                return subFolder;
+            }
+        }
+        throw new FileNotFoundException("No sub-folders found in " + parent);
     }
 
 }

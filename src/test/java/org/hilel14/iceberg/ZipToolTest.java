@@ -160,6 +160,8 @@ public class ZipToolTest {
         Path target = workFolder.resolve("extracted");
         Files.createDirectory(target);
         instance.extract(archive, target);
+        Path base = Workflow.findFirstFolder(target);
+        assertEquals(5, base.toFile().list().length);
     }
 
 }

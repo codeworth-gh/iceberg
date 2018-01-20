@@ -6,10 +6,8 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.nio.file.DirectoryStream;
 import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
-import java.nio.file.LinkOption;
 import java.nio.file.Path;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.StandardOpenOption;
@@ -103,8 +101,10 @@ public class ZipTool {
         ZipArchiveEntry entry = new ZipArchiveEntry(entryName);
         entry.setSize(Files.size(source));
         outStream.putArchiveEntry(entry);
-        try (InputStream inStream = new FileInputStream(source.toFile())) {
-            IOUtils.copy(inStream, outStream);
+        if (!Files.isDirectory(source)) {
+            try (InputStream inStream = new FileInputStream(source.toFile())) {
+                IOUtils.copy(inStream, outStream);
+            }
         }
         outStream.closeArchiveEntry();
     }
@@ -115,42 +115,17 @@ public class ZipTool {
             while (entries.hasMoreElements()) {
                 ZipArchiveEntry entry = entries.nextElement();
                 Path targetFile = targetFolder.resolve(entry.getName());
-                Files.createDirectories(targetFile.getParent());
-                try (InputStream in = zipFile.getInputStream(entry);
-                        OutputStream out = new FileOutputStream(targetFile.toString())) {
-                    IOUtils.copy(in, out);
-                }
-            }
-        }
-    }
-
-    /**
-     * Restore state of target folder
-     *
-     * @param target A folder with files extracted from archives
-     * @throws java.lang.Exception
-     */
-    public void restore(Path target) throws Exception {
-        Path inventoryFile = target.resolve("snapshot.json");
-        Snapshot snapshot
-                = new ObjectMapper().readValue(inventoryFile.toFile(), Snapshot.class);
-        // delete files in target folder and not in snapshot
-        try (DirectoryStream<Path> stream = Files.newDirectoryStream(target, (entry) -> {
-            return Files.isDirectory(entry, LinkOption.NOFOLLOW_LINKS);
-        })) {
-            for (Path folder : stream) {
-                try (DirectoryStream<Path> items = Files.newDirectoryStream(folder)) {
-                    for (Path item : items) {
-                        Path relative = target.relativize(item);
-                        if (!snapshot.containsPath(relative.toString())) {
-                            LOGGER.log(Level.INFO, "Deleting {0}", relative);
-                            Files.delete(item);
-                        }
+                if (entry.isDirectory()) {
+                    Files.createDirectories(targetFile);
+                } else {
+                    Files.createDirectories(targetFile.getParent());
+                    try (InputStream in = zipFile.getInputStream(entry);
+                            OutputStream out = new FileOutputStream(targetFile.toString())) {
+                        IOUtils.copy(in, out);
                     }
                 }
             }
         }
-
     }
 
     class Zipper extends SimpleFileVisitor<Path> {
@@ -161,6 +136,20 @@ public class ZipTool {
         public Zipper(ZipArchiveOutputStream zipStream, Snapshot snapshot) {
             this.zipStream = zipStream;
             this.snapshot = snapshot;
+        }
+
+        @Override
+        public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs)
+                throws IOException {
+            if (dir.toFile().listFiles().length == 0) {
+                String hash = DigestUtils.md2Hex(getRelativePath(dir).toString());
+                if (!history.contains(hash)) {
+                    addToZip(dir, getRelativePath(dir).toString() + "/", zipStream);
+                    history.add(hash);
+                }
+                snapshot.addPath(hash, getRelativePath(dir));
+            }
+            return FileVisitResult.CONTINUE;
         }
 
         @Override
@@ -189,6 +178,7 @@ public class ZipTool {
         private Path getRelativePath(Path p) {
             return sourceFolder.getFileName().resolve(sourceFolder.relativize(p));
         }
+
     }
 
     /**
